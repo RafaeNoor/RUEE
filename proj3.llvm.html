@@ -1,0 +1,166 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"></head><body bgcolor="fffacd"><p></p><center><p></p>
+
+<h1>CS 701, Project 3 <br> Global Code Optimizations</h1>
+
+<h2>Due: Thursday, November 20, 2008 (midnight) <br> Not accepted after: Thursday, December 4, 2008 (midnight)</h2>
+
+<p></p></center><p></p>
+
+<h2>Overview</h2>
+
+<p>For this project, you will implement four related optimizations using LLVM:</p>
+
+<ol>
+<li>Move loop-invariant computations out of loops.</li>
+<li>Fold and propagate constants.</li>
+<li>Eliminate dead instructions. </li>
+<li>Propagate constants through conditionals.</li>
+</ol>
+
+<h2>Configuration</h2>
+
+<p>Each optimization should be written as a pass, in a fashion similar to
+<code>Stroll</code> from Project 2. Keep all of your code for this project in a
+single subdirectory of <code>llvm/lib/</code>, both for the sake of the grader
+and to simplify your build/test cycle. The makefile from the <code>Stroll</code>
+directory, copied to your directory and suitably edited, will build
+your passes into a single dynamic library. As before, to invoke a pass
+named <code>pass701</code> in library <code>lib.so</code> on the bytecode file <code>foo.bc</code>, do:</p>
+
+<pre><code>    opt -load lib.so -pass701 foo.bc -f -o foo-opt.bc
+</code></pre>
+
+<p>Passing the <code>-stats</code> flag to <code>opt</code> instructs the pass manager to print
+any statistics that you have defined with the <code>STATISTIC</code> macro. Using
+these macros in your programs should help you track your progress and
+catch errors.</p>
+
+<p>Each of the passes in this assignment is already an optimization
+pass in LLVM. So, do not call LLVM's pass for an optimization while
+implementing your own version of that optimization, and do not copy
+LLVM's code from those passes.</p>
+
+<h2>Loop-Invariant Code Motion</h2>
+
+<p>For this part of the project you will identify loop-invariant
+expressions, and move their computations out of those loops. Instead
+of manually finding natural loops, you should probably build your
+analysis as a <a href="http://llvm.org/doxygen/classllvm_1_1LoopPass.html">LoopPass</a>.</p>
+
+<p>The computations of loop-invariant expressions should be moved to the
+loop's preheader. The preheader of a loop is a CFG node that is the
+(unique) immediate predecessor of the loop header from outside the
+loop.</p>
+
+<p>You do not need to worry about profitability (is moving the invariant
+a guaranteed improvement), but you do need to worry about safety, so,
+you should not move any computation that might cause a run-time error,
+undefined behavior, or other uncontrolled side effects. In particular,
+you should not move instructions in which the opcode is <code>*div</code> or
+<code>*rem</code>. (You can move them if you can guarantee that the denominator
+is non-zero, but such movement is not required in this assignment.)
+Also, instructions that involve memory (<code>malloc</code>, <code>load</code>, <code>store</code>,
+etc.)  should not be considered loop invariant.</p>
+
+<p>Think carefully about <code>phi</code> nodes.</p>
+
+<p>Register this pass with the name <code>licm701</code>, through the same mechanism
+that <code>Stroll.cpp</code> from Project 2 used to register itself as an <code>opt</code>
+pass.</p>
+
+<p>This pass should keep track of how many instructions have been
+moved, using the <code>STATISTIC</code> macro discussed in Project 2.</p>
+
+<h2>Constant Folding and Propagation</h2>
+
+<p>For this part of the project you will look for values computed as pure
+functions of constants (e.g. 1+2), and replace those values with the
+evaluated constant value (e.g. 3). Any of the instructions listed in
+<a href="http://llvm.org/docs/LangRef.html#constantexprs">constant
+expressions</a> is a
+pure function.</p>
+
+<p>Register this pass with the name <code>cp701</code>. This pass should maintain as
+a <code>STATISTIC</code> how many instructions have been removed.</p>
+
+<h2>Dead Instruction Elimination</h2>
+
+<p>Recall that an assignment is dead if it is not live immediately after
+the assignment. For this part of the project you will identify and
+remove all instructions that correspond to useless assignments. That
+is, remove any values that have no uses.</p>
+
+<p>Register this pass with the name <code>die701</code>. This pass should maintain
+as a <code>STATISTIC</code> how many instructions have been removed.</p>
+
+<h2>Conditional Constant Propagation</h2>
+
+<p>If the compiler can determine that the predicate of a conditional <code>br</code> or
+<code>switch</code> instruction is a constant, then it can replace that instruction with an
+unconditional branch and possibly remove entire blocks of dead code.
+For this part of the project:</p>
+
+<ol>
+<li>Perform constant propagation, by requiring the <code>cp701</code> pass.</li>
+<li>Replace <code>br</code> and <code>switch</code> instructions that have constant conditions with
+unconditional <code>br</code> instructions.</li>
+<li>Perform a data flow analysis to determine which basic blocks are
+now reachable.</li>
+<li>Remove unreachable basic blocks.</li>
+</ol>
+
+<p>Register this pass with the name <code>ccp701</code>. This pass should maintain
+as a <code>STATISTIC</code> the number of instructions turned into unconditional
+<code>br</code> instructions.</p>
+
+<h2>Repeating Your Optimizations</h2>
+
+<p>Each of the optimizations you've now coded may benefit from being run
+after the other optimizations you've coded. To demonstrate this, try
+optimizing your code with the <code>iter-opt</code> script, available on the CSL
+machines at <code>~cs701-1/public/llvm/scripts/</code>.</p>
+
+<p>To ready <code>iter-opt</code> for use, you'll need to change a few settings in
+the script itself. In particular, you <em>must</em> modify <code>llvm_bin</code> to
+reflect your LLVM binary, and <code>dynlib</code> to reflect the location of the
+dynamic library that contains your optimizations.</p>
+
+<p>To use <code>iter-opt</code>, run <code>iter-opt &lt;file&gt;</code>. If <code>&lt;file&gt;</code> is LLVM bitcode
+of a stand-alone C file, <code>iter-opt</code> will repeatedly run your
+optimizations. It runs each pass repeatedly, until they report only
+<code>STATISTIC</code>s of 0, i.e. until they can no longer collectively further
+optimize the program. (The script will also stop after it runs every
+program eight times, to guard against sequences of optimizations that
+don't converge.)  If you have not implemented <code>STATISTIC</code>s in your
+passes, this behavior will be hidden; add them to observe this
+behavior.</p>
+
+<h2>Grading Criteria</h2>
+
+<p>
+As was the case for project 2, this project may be done individually or in two person teams.
+Your grade will be based on the correctness of your implementation, a
+subjective evaluation of the quality of your code, and on the features
+you implement.</p>
+
+<h2>What to Hand In</h2>
+
+<p>Please copy the following files to your subdirectory of the handin
+directory (~cs701-1/public/proj3/handin):</p>
+
+<ol>
+<li>The subdirectory of <code>llvm-2.3/lib</code> where you put your code, and
+all of its contents.</li>
+<li>A file named README that tells which features you implemented. </li>
+</ol>
+
+<p>Be sure not to copy any object files or binary libraries, as they take
+up a lot of space and may cause the directory to exceed its quota.</p>
+
+<h2>Late Policy</h2>
+
+<p>This project is due by midnight on November 20. The project may be
+handed in as late as midnight on Tuesday, December 2, with a late
+penalty of 2% per day.</p>
+</body></html>
