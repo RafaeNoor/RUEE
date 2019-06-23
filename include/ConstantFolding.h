@@ -13,6 +13,7 @@ class ConstantFolding : public llvm::FunctionPass {
 
     void getAnalysisUsage(llvm::AnalysisUsage &Info) const override;
     bool runOnFunction(llvm::Function &) override;
+    void replaceAllUses(llvm::Instruction* , llvm::Constant *);
 
 
 };
