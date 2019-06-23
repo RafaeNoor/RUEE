@@ -18,7 +18,7 @@ bool LoopInvar::doInitialization(Loop* L, LPPassManager &LPM){
 }
 
 bool LoopInvar::runOnLoop(Loop* L,LPPassManager &LPM) {
-  errs()<<*L<<"\n";
+  //errs()<<*L<<"\n";
 
   std::set<Instruction *> insToMove;
 
@@ -70,14 +70,14 @@ bool LoopInvar::runOnLoop(Loop* L,LPPassManager &LPM) {
 
 
       if(isLoopInvar){
-        errs()<<"Loop Invariant: "<<*I<<"\n";
+        //errs()<<"Loop Invariant: "<<*I<<"\n";
         BasicBlock* LoopPreheader = L -> getLoopPreheader();
         if(!LoopPreheader)
           errs()<<"Loop doesn't have a preheader\n";
 
         insToMove.insert(I);
       } else {
-        errs()<<"Regular Instruction: "<<*I<<"\n";
+        //errs()<<"Regular Instruction: "<<*I<<"\n";
       }
     } 
   }
