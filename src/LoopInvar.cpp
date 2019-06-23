@@ -29,20 +29,46 @@ bool LoopInvar::runOnLoop(Loop* L,LPPassManager &LPM) {
 
       bool isLoopInvar = true;
 
+      if(StoreInst* SI = dyn_cast<StoreInst>(I)){
 
-      for(unsigned OP_I = 0; OP_I < I->getNumOperands(); ++OP_I){
-        Value* Val_I = I->getOperand(OP_I);
-        if(ConstantInt * CI = dyn_cast<ConstantInt>(Val_I)){
-        } else if(Instruction* Oper = dyn_cast<Instruction>(Val_I)){
-          if(insToMove.find(Oper) == insToMove.end())
-            isLoopInvar = false;
+        Instruction* SI_Point = dyn_cast<Instruction>(SI->getPointerOperand());
 
-        } else {
+        if(SI_Point && L->contains(SI_Point)){
           isLoopInvar = false;
         }
+
+        Instruction* ValI = dyn_cast<Instruction>(SI->getValueOperand());
+
+        if(ValI && !isa<ConstantInt>(ValI) && insToMove.find(ValI) == insToMove.end()){
+          isLoopInvar = false;
+        }
+
+      } else if(LoadInst* LI = dyn_cast<LoadInst>(I)){
+
+        Instruction* LI_Point = dyn_cast<Instruction>(LI->getPointerOperand());
+
+        if(LI_Point && L->contains(LI_Point) && insToMove.find(LI_Point) == insToMove.end()){
+          isLoopInvar = false;
+        }
+
+      } else {
+
+        for(unsigned OP_I = 0; OP_I < I->getNumOperands(); ++OP_I){
+          Value* Val_I = I->getOperand(OP_I);
+
+          if(isa<ConstantInt>(Val_I)){
+            continue;
+          } else if(Instruction* Oper = dyn_cast<Instruction>(Val_I)){
+            if(insToMove.find(Oper) == insToMove.end())
+              isLoopInvar = false;
+          } else {
+            isLoopInvar = false;
+          }
+        }
+
       }
-      
-      
+
+
       if(isLoopInvar){
         errs()<<"Loop Invariant: "<<*I<<"\n";
         BasicBlock* LoopPreheader = L -> getLoopPreheader();
@@ -66,8 +92,7 @@ bool LoopInvar::runOnLoop(Loop* L,LPPassManager &LPM) {
 }
 
 void LoopInvar::getAnalysisUsage(AnalysisUsage &Info) const {
-  Info.addRequired<DominatorTreeWrapperPass>();
-  Info.setPreservesAll();
+  return;
 }
 
 
