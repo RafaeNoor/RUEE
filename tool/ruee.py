@@ -47,47 +47,28 @@ print("="*100)
 
 # Produce human readible .ll files
 print("Producing .ll files!")
+
 subprocess.call(["cp",sys.argv[1],work_dir])
 
-Cmd = ["llvm-dis-6.0",sys.argv[1],"-o",work_dir+"/"+input_file_name+".ll"]
-run_and_print(Cmd)
+def create_ll(work, basename, fnames):
+    for name in fnames:
+        Cmd = ["llvm-dis-6.0",work+"/"+basename+name+".bc"]
+        run_and_print(Cmd)
 
-Cmd = ["llvm-dis-6.0",work_dir+"/"+input_file_name+"_M2R.bc"]
-run_and_print(Cmd)
-
-Cmd = ["llvm-dis-6.0",work_dir+"/"+input_file_name+"_LI.bc"]
-run_and_print(Cmd)
-
-Cmd = ["llvm-dis-6.0",work_dir+"/"+input_file_name+"_CF.bc"]
-run_and_print(Cmd)
+create_ll(work_dir, input_file_name, ["","_M2R","_LI","_CF"])
 
 print("="*100)
 
 
 print("Producing binary!")
 
-Cmd = ["llc-6.0","-filetype=obj", work_dir+"/"+input_file, "-o", work_dir+"/"+input_file_name+".o"]
-run_and_print(Cmd)
+def create_binary(work, basename, fnames):
+    for name in fnames:
+        Cmd = ["llc-6.0","-filetype=obj", work+"/"+basename+name+'.bc', "-o", work_dir+"/"+basename+name+".o"]
+        run_and_print(Cmd)
 
-Cmd = ["clang-6.0", work_dir+"/"+input_file_name+".o", "-o", work_dir+"/"+input_file_name+"_ORIG"]
-run_and_print(Cmd)
-
-
-Cmd = ["llc-6.0","-filetype=obj", work_dir+"/"+input_file_name+"_LI.bc", "-o", work_dir+"/"+input_file_name+"_LI.o"]
-run_and_print(Cmd)
-
-Cmd = ["clang-6.0", work_dir+"/"+input_file_name+"_LI.o", "-o", work_dir+"/"+input_file_name+"_LI"]
-run_and_print(Cmd)
-
-Cmd = ["llc-6.0","-filetype=obj", work_dir+"/"+input_file_name+"_CF.bc", "-o", work_dir+"/"+input_file_name+"_CF.o"]
-run_and_print(Cmd)
-
-Cmd = ["clang-6.0", work_dir+"/"+input_file_name+"_CF.o", "-o", work_dir+"/"+input_file_name+"_CF"]
-run_and_print(Cmd)
+        Cmd = ["clang-6.0", work+"/"+basename+name+".o", "-o", work+"/"+basename+name]
+        run_and_print(Cmd)
 
 
-
-
-
-
-
+create_binary(work_dir, input_file_name, ["","_LI","_CF"])
