@@ -20,10 +20,13 @@ bool ConstantFolding::runOnFunction(Function &F) {
   std::map<Instruction*, Constant*> simpleMemory;
 
 
+
+
   for(Function::iterator BI = F.begin(); BI != F.end(); ++BI){
     for(BasicBlock::iterator II = BI->begin(); II != BI->end(); II++){
+      
       Instruction* I = &*II;
-      //errs()<<*I<<"\n";
+      errs()<<*I<<"\n";
 
       if(BinaryOperator* BO = dyn_cast<BinaryOperator>(I)){
 
@@ -91,19 +94,9 @@ void ConstantFolding::getAnalysisUsage(AnalysisUsage &Info) const {
 }
 
 void ConstantFolding::replaceAllUses(Instruction* I, Constant * C){
-  unsigned k = 0;
-  if(C){
-    for(auto &ResultUsers: I->uses()){
-      User * ResultUser = ResultUsers.getUser();
-      ResultUser->setOperand(ResultUsers.getOperandNo(), C);
-
-      k++;
-      if(k == 5)
-        break;
-    }
-  } else {
-    errs()<<"Replace all uses called with Null Constant\n";
-  }
+  if(!I)
+    return;
+  I->replaceAllUsesWith(C); //Neat function
 
 }
 
