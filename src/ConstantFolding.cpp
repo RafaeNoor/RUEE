@@ -137,6 +137,9 @@ void ConstantFolding::handleICmpInst(ICmpInst* IC){
       case ICmpInst::ICMP_EQ:
         Result = ConstantInt::get(IC->getType(), LS == RS);
         break;
+      case ICmpInst::ICMP_NE:
+        Result = ConstantInt::get(IC->getType(), LS != RS);
+        break;
       default:
         break;
     }
@@ -151,7 +154,7 @@ void ConstantFolding::handleICmpInst(ICmpInst* IC){
 
 
 void ConstantFolding::replaceAllUses(Instruction* I, Constant * C){
-  if(!I)
+  if(!I || !C)
     return;
   I->replaceAllUsesWith(C); //Neat function
 
