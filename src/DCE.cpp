@@ -11,20 +11,32 @@ using namespace llvm;
 DCE::DCE() : FunctionPass(ID) {}
 
 bool DCE::runOnFunction(Function &F) {
-  return false;
+  bool Removed = false;
+  for(Function::iterator BI = F.begin(); BI != F.end(); BI++){
+    for(BasicBlock::iterator II = BI->begin(); II != BI->end(); ){
+      Instruction* I = &*II;
+
+      II++;
+
+      if(I->use_empty()){
+        I->removeFromParent();
+        Removed = true;
+      }
+    }
+  }
+  return Removed;
 }
 
 void DCE::getAnalysisUsage(AnalysisUsage &Info) const {
-  Info.addRequired<DominatorTreeWrapperPass>();
-  Info.setPreservesAll();
+  //Info.setPreservesAll();
 }
 
 
 
 char DCE::ID = 0;
 static RegisterPass<DCE>
-X("loop-invar",         // pass option
-    "Moves Loop Invariants outside the loop", // pass description
+X("deadcode",         // pass option
+    "Remove any dead code", // pass description
     false, // does not modify the CFG
     false  // and it's an analysis
  );
