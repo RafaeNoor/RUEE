@@ -2,6 +2,7 @@ import sys
 import subprocess
 import os
 
+subprocess.call(["clear"])
 #python3 driver.py input.bc workdir
 
 input_file = sys.argv[1].split("/")[-1]
@@ -42,6 +43,19 @@ Cmd = ["opt-6.0","-load",RUEE_HOME+"/build/src/libLLVMConstFold.so" ,"-const-fol
 run_and_print(Cmd)
 
 
+Cmd = ["opt-6.0","-load",RUEE_HOME+"/build/src/libLLVMDCE.so" ,"-dce",
+    work_dir+"/"+input_file_name+"_CF.bc", "-o",work_dir+"/"+input_file_name+"_DCE.bc"]
+run_and_print(Cmd)
+
+Cmd = ["opt-6.0","-load",RUEE_HOME+"/build/src/libLLVMCondConstProp.so" ,"-cond-constprop",
+    work_dir+"/"+input_file_name+"_DCE.bc", "-o",work_dir+"/"+input_file_name+"_CCP.bc"]
+run_and_print(Cmd)
+
+
+
+
+
+
 print("="*100)
 
 
@@ -55,7 +69,7 @@ def create_ll(work, basename, fnames):
         Cmd = ["llvm-dis-6.0",work+"/"+basename+name+".bc"]
         run_and_print(Cmd)
 
-create_ll(work_dir, input_file_name, ["","_M2R","_LI","_CF"])
+create_ll(work_dir, input_file_name, ["","_M2R","_LI","_CF","_DCE","_CCP"])
 
 print("="*100)
 
@@ -71,4 +85,5 @@ def create_binary(work, basename, fnames):
         run_and_print(Cmd)
 
 
-create_binary(work_dir, input_file_name, ["","_LI","_CF"])
+create_binary(work_dir, input_file_name, ["","_LI","_CF","_DCE","_CCP"])
+
