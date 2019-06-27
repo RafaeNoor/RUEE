@@ -1,5 +1,5 @@
-; ModuleID = 'testA.c'
-source_filename = "testA.c"
+; ModuleID = 'testD.c'
+source_filename = "testD.c"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
@@ -24,11 +24,11 @@ define i32 @main(i32, i8**) #0 {
   store i32 0, i32* %10, align 4
   br label %11
 
-; <label>:11:                                     ; preds = %28, %2
+; <label>:11:                                     ; preds = %32, %2
   %12 = load i32, i32* %10, align 4
   %13 = load i32, i32* %4, align 4
   %14 = icmp slt i32 %12, %13
-  br i1 %14, label %15, label %31
+  br i1 %14, label %15, label %35
 
 ; <label>:15:                                     ; preds = %11
   %16 = load i32, i32* %6, align 4
@@ -38,25 +38,33 @@ define i32 @main(i32, i8**) #0 {
   %19 = load i32, i32* %8, align 4
   %20 = add i32 %19, 5
   store i32 %20, i32* %9, align 4
-  %21 = load i32, i32* %10, align 4
-  %22 = load i8**, i8*** %5, align 8
-  %23 = load i32, i32* %10, align 4
-  %24 = sext i32 %23 to i64
-  %25 = getelementptr inbounds i8*, i8** %22, i64 %24
-  %26 = load i8*, i8** %25, align 8
-  %27 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str, i32 0, i32 0), i32 %21, i8* %26)
-  br label %28
+  %21 = load i32, i32* %8, align 4
+  %22 = icmp eq i32 %21, 30
+  br i1 %22, label %23, label %24
 
-; <label>:28:                                     ; preds = %15
-  %29 = load i32, i32* %10, align 4
-  %30 = add nsw i32 %29, 1
-  store i32 %30, i32* %10, align 4
+; <label>:23:                                     ; preds = %15
+  br label %35
+
+; <label>:24:                                     ; preds = %15
+  %25 = load i32, i32* %10, align 4
+  %26 = load i8**, i8*** %5, align 8
+  %27 = load i32, i32* %10, align 4
+  %28 = sext i32 %27 to i64
+  %29 = getelementptr inbounds i8*, i8** %26, i64 %28
+  %30 = load i8*, i8** %29, align 8
+  %31 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @.str, i32 0, i32 0), i32 %25, i8* %30)
+  br label %32
+
+; <label>:32:                                     ; preds = %24
+  %33 = load i32, i32* %10, align 4
+  %34 = add nsw i32 %33, 1
+  store i32 %34, i32* %10, align 4
   br label %11
 
-; <label>:31:                                     ; preds = %11
-  %32 = load i32, i32* %8, align 4
-  %33 = load i32, i32* %9, align 4
-  %34 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @.str.1, i32 0, i32 0), i32 %32, i32 %33)
+; <label>:35:                                     ; preds = %23, %11
+  %36 = load i32, i32* %8, align 4
+  %37 = load i32, i32* %9, align 4
+  %38 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @.str.1, i32 0, i32 0), i32 %36, i32 %37)
   ret i32 0
 }
 

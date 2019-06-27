@@ -12,6 +12,8 @@ int main(int argc, char *argv[]){
   for(int i = 0; i < argc; ++i){
     result = a + b;
     additional = result + 5;
+    if(result == 30)
+      break;
     printf("argv[%d]: %s\n",i,argv[i]);
   }
 
