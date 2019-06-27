@@ -1,7 +1,5 @@
 # RUEE
 RUEE uses LLVM-6.0 and CMake to build the Shared Object files. To use RUEE you would need to export environment variables:
-`# RUEE
-RUEE uses LLVM-6.0 and CMake to build the Shared Object files. To use RUEE you would need to export environment variables:
 
 
 ```export LLVM_COMPILER=clang   
