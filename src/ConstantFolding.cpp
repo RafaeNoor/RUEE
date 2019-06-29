@@ -7,7 +7,6 @@
 
 
 #include <map>
-#include <iostream>
 
 
 using namespace llvm;
@@ -24,7 +23,6 @@ bool ConstantFolding::runOnFunction(Function &F) {
     for(BasicBlock::iterator II = BI->begin(); II != BI->end(); II++){
 
       Instruction* I = &*II;
-      //errs()<<*I<<"\n";
 
       if(BinaryOperator* BO = dyn_cast<BinaryOperator>(I))
         handleBinaryOperator(BO);
@@ -47,10 +45,8 @@ void ConstantFolding::handleBinaryOperator(BinaryOperator* BO){
   ConstantInt* RO = dyn_cast<ConstantInt>(BO->getOperand(1));
 
   if(LO && RO){
-    IRBuilder<> Builder(BO);
 
     auto OpCode = BO->getOpcode();
-    //errs()<<"BinaryInst: "<<*BO<<", Opcode: "<<OpCode<<"\n";
 
 
     int64_t LeftVal = LO->getSExtValue();
@@ -58,6 +54,8 @@ void ConstantFolding::handleBinaryOperator(BinaryOperator* BO){
 
     Constant* Result = NULL;
 
+
+    //TODO: Add more OpCode support
     switch(OpCode){
       case Instruction::Add :
         Result = ConstantInt::get(BO->getType(), LeftVal+RightVal);
@@ -80,7 +78,6 @@ void ConstantFolding::handleBinaryOperator(BinaryOperator* BO){
 
 void ConstantFolding::handleStoreInst(StoreInst* SI, std::map<Instruction*, Constant* > &mem){
   if(Constant* C = dyn_cast<Constant>(SI->getValueOperand())){
-    //errs()<<"Inserting Constant into memory\n";
     Instruction *To = dyn_cast<Instruction>(SI->getPointerOperand());
     if(To)
       mem.insert({To, C});
@@ -92,12 +89,9 @@ void ConstantFolding::handleLoadInst(LoadInst* LI, std::map<Instruction*, Consta
   Instruction* I = &*LI;
 
   if(Constant* Result = dyn_cast<Constant>(LI->getPointerOperand())){
-    //errs()<<"Load result is constant\n";
     replaceAllUses(I, Result);
   } else if(mem.find(From) != mem.end()){
-    //errs()<<"Load result is found in memory!\n";
     Constant* C = mem.find(From)->second;
-    //errs()<<"Replacing load with "<<*C<<"\n";
     replaceAllUses(I,C);
 
   }
@@ -110,6 +104,7 @@ void ConstantFolding::handleICmpInst(ICmpInst* IC){
 
   bool isConst = true;
   Instruction* I = &*IC;
+
   for(unsigned i = 0; i < IC->getNumOperands(); i++){
     Value * op = IC->getOperand(i);
 
@@ -133,6 +128,7 @@ void ConstantFolding::handleICmpInst(ICmpInst* IC){
 
     Constant* Result = NULL;
 
+    //TODO: Add more predicates 
     switch(IC->getPredicate()){
       case ICmpInst::ICMP_EQ:
         Result = ConstantInt::get(IC->getType(), LS == RS);
