@@ -1,6 +1,7 @@
 #include "ConditionalConstProp.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h" 
 
 #include <map>
 #include <queue>
@@ -35,6 +36,8 @@ bool ConditionalConstProp::runOnFunction(Function &F) {
 
   }
 
+  //TODO: map invokes too much overhead, use better data structure
+
   std::map<BasicBlock*, bool > visitedMap;
 
 
@@ -68,26 +71,23 @@ bool ConditionalConstProp::runOnFunction(Function &F) {
 
   }
 
+
+
   for(Function::iterator FI = F.begin(); FI != F.end(); ){
     BasicBlock * BB = &*FI;
-
     FI++;
 
-
     if(visitedMap.find(BB) == visitedMap.end()){ 
-      //errs()<<*BB<<" has no preds and is not the entry block\n\n";
-      //removeReferences(BB);
-      //BB->removeFromParent();
+      removeReferences(BB);
+      BB->removeFromParent();
     }
-
-
 
   }
 
 
-
   return Changed;
 }
+
 
 void ConditionalConstProp::getAnalysisUsage(AnalysisUsage &Info) const {}
 
@@ -96,31 +96,18 @@ void ConditionalConstProp::removeReferences(BasicBlock* BB){
     errs()<<"removeReferences invoked with nullptr\n";
     return;
   }
+
   TerminatorInst* TI = BB->getTerminator();
 
-  BB->replaceSuccessorsPhiUsesWith(*pred_begin(BB));
 
-  /*
+  for(unsigned i = 0; i< TI->getNumSuccessors(); ++i){
+    BasicBlock* succ = TI->getSuccessor(i);
+    succ->removePredecessor(BB,true);// update any PHI instructions in the next block
+  }
 
-     for(unsigned i = 0; i< TI->getNumSuccessors(); ++i){
-     BasicBlock* succ = TI->getSuccessor(i);
-
-     for(BasicBlock::iterator BI = succ->begin(); BI != succ-> end(); ){
-     Instruction* I = &*BI;
-
-     BI++;
-
-     if(PHINode* PHI = dyn_cast<PHINode>(I)){
-     errs()<<"PHI: "<<*PHI<<" with reff to "<<*BB<<"\n";
-     PHI->removeIncomingValue(BB);
-     errs()<<"PHI after: "<<*PHI<<"\n";
-     } else {
-     break;
-     }
-     }
-
-     }*/
+  BB->dropAllReferences();// After updating PHI nodes of successors, remove any references (e.g. preds = ...) for BB
 }
+
 
 bool ConditionalConstProp::handleBranchInst(BranchInst* BI){
   if(!BI){
@@ -132,8 +119,6 @@ bool ConditionalConstProp::handleBranchInst(BranchInst* BI){
   if(BI->isConditional()){
 
     if(ConstantInt* C = dyn_cast<ConstantInt>(BI->getCondition())){
-      errs()<<*BI<<" has conditional "<<*C<<" with type "<<*C->getType()<<", "<<C->getZExtValue()<<"\n";
-
 
       BranchInst* NewInst = NULL;
       if(C->getZExtValue() == 1){
@@ -142,8 +127,7 @@ bool ConditionalConstProp::handleBranchInst(BranchInst* BI){
         NewInst = BranchInst::Create(BI->getSuccessor(1), BI);
       }
 
-      errs()<<"NewInst: "<<*NewInst<<"\n";
-      BI->removeFromParent();
+      BI->eraseFromParent();
 
       return true;
     }
@@ -159,7 +143,6 @@ bool ConditionalConstProp::handleSwitchInst(SwitchInst* SI){
     return false;
   }
 
-  errs()<<"Switch Inst: "<<*SI<<"\n";
 
 
   if(ConstantInt* C = dyn_cast<ConstantInt>(SI->getCondition())){
@@ -168,7 +151,6 @@ bool ConditionalConstProp::handleSwitchInst(SwitchInst* SI){
       BasicBlock * succ = SI->getSuccessor(i);
       if(C == SI->findCaseDest(succ)){
         BranchInst* BI = BranchInst::Create(succ, SI);
-        errs()<<"replaced with: "<<*BI<<"\n";
         SI->removeFromParent();
         break;
       }
@@ -176,7 +158,7 @@ bool ConditionalConstProp::handleSwitchInst(SwitchInst* SI){
     return true;
 
   } else {
-    errs()<<"Switch Condition not constant\n";
+    //errs()<<"Switch Condition not constant\n";
   }
 
 

@@ -24,7 +24,7 @@ bool ConstantFolding::runOnFunction(Function &F) {
     for(BasicBlock::iterator II = BI->begin(); II != BI->end(); II++){
 
       Instruction* I = &*II;
-      errs()<<*I<<"\n";
+      //errs()<<*I<<"\n";
 
       if(BinaryOperator* BO = dyn_cast<BinaryOperator>(I))
         handleBinaryOperator(BO);
